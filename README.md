@@ -16,7 +16,6 @@ All application developers has to do is to write a 'migration' module:
 defmodule Example.Migration do
   use Somlos.Migration
 
-  # To uncomment when upgrading:
   step "Add module AnotherModule", Somlos.Module.Add.new(module: AnotherModule)
   step "Update Example.Server", Somlos.Update.new(module: Example.Server)
 
