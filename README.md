@@ -10,7 +10,7 @@ every release is complicated.
 
 It ain't a magic tool that solves release upgrades. Upgrades are still a hard thing to develop and test, so Somlos only tries to remove some unnecessary obstacles to achieving zen of seamless upgrades.
 
-All application developers has to do is to write a 'migration' module:
+All application's developer has to do is to write a 'migration' module:
 
 ```elixir
 defmodule Example.Migration do
