@@ -3,7 +3,7 @@
 (Sömlös, Swedish for Seamless)
 
 Somlos is a tiny DSL and a convenince helper for describing Erlang/OTP application upgrades.
-It is capable of generating instructions and appups from beam files, other modules and (soon) remote running nodes.
+It is capable of generating instructions and appups from beam files, other modules and remote running nodes.
 
 The primary task that Somlos targets to solve is that maintaining individual appups for 
 every release is complicated. 

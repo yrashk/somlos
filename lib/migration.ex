@@ -11,6 +11,7 @@ defmodule Somlos.Migration do
           [{to_char_list(origin_vsn), instructions[:downgrade]}]
         }
       end
+
       def instructions_from_file(file) when is_binary(file) do
         {:ok,{_,[{:attributes, attrs}]}} = :beam_lib.chunks(binary_to_atom(file), [:attributes])
         instructions(attrs)
@@ -19,6 +20,13 @@ defmodule Somlos.Migration do
       def instructions_from_module(module) when is_atom(module) do        
         instructions(module.__info__(:attributes))
       end
+
+      def instructions_from_remote(node, 
+                                   module // __MODULE__) when is_atom(node) 
+                                                         and is_atom(module) do
+
+        instructions(:rpc.call(node, module, :__info__, [:attributes]))
+      end                                                         
 
       def instructions, do: instructions([])
       def instructions(origin_attrs) do              
