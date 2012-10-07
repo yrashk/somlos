@@ -9,7 +9,7 @@ defimpl Somlos.Step, for: Somlos.Module.Load do
     {:load_module, module, pre_purge, post_purge, depends_on}
   end
 
-  def reverse(update), do: update
+  def reverse(load), do: load
 end
 
 defrecord Somlos.Module.Add, module: nil
