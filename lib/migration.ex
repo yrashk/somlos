@@ -97,10 +97,12 @@ defmodule Somlos.Migration do
     reverse = opts[:reverse] || quote do: Somlos.Step.reverse(unquote(forward))
 
     quote do
-      Module.put_attribute __MODULE__, unquote(type),
-             {unquote(name), 
-             {unquote(forward), Somlos.Step.instruction(unquote(forward))},
-             {unquote(reverse), Somlos.Step.instruction(unquote(reverse))}}
+      @value  {unquote(name), 
+               {unquote(forward), Somlos.Step.instruction(unquote(forward))},
+               {unquote(reverse), Somlos.Step.instruction(unquote(reverse))}}
+      Module.put_attribute __MODULE__, unquote(type), @value
+      def unquote(name)(), do: @value
+      Module.delete_attribute __MODULE__, :value
     end
   end
 end
