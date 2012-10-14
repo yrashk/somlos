@@ -4,6 +4,7 @@ defmodule Somlos.Migration do
     quote do
       import Somlos.Migration
       Module.register_attribute __MODULE__, :step
+      Module.register_attribute __MODULE__, :always
 
       def appup(origin_vsn, target_vsn, instructions) do
         {to_char_list(target_vsn), 
@@ -34,51 +35,70 @@ defmodule Somlos.Migration do
         # Remove attributes of no interest
         origin_steps = lc {:step, [v]} inlist origin_attrs, do: v
         target_steps = lc {:step, [v]} inlist target_attrs, do: v
+        always_steps = lc {:always, [v]} inlist target_attrs, do: v        
         # Figure out which way to go
         cond do
-          length(origin_steps) > length(target_steps) -> downgrade(origin_steps, target_steps)        
-          length(origin_steps) < length(target_steps) -> upgrade(origin_steps, target_steps)          
+          length(origin_steps) > length(target_steps) -> downgrade(origin_steps, target_steps, always_steps)        
+          length(origin_steps) < length(target_steps) -> upgrade(origin_steps, target_steps, always_steps)          
           (origin_steps -- target_steps) == [] -> :up_to_date
           true -> {:mismatch, origin_steps -- target_steps}
         end
       end
 
-      defp upgrade(origin, target) do
+      defp upgrade(origin, target, always) do
         steps = target -- origin
+        always = lc {_name, {_, forward}, {_, reverse}} inlist always, do: {forward, reverse}
+        if Enum.empty?(always) do
+          always_forward = []
+          always_reverse = []
+        else 
+          [always_forward, always_reverse] = List.unzip always
+        end
         if (length(steps) == length(target) - length(origin)) do
           sort_steps(lc {_name, {_, forward}, {_, reverse}} inlist steps do
             {forward, reverse}
-          end)
+          end, always_forward, always_reverse)
         else
           {:mismatch, steps}
         end
       end
 
-      defp downgrade(origin, target) do
+      defp downgrade(origin, target, always) do
         steps = Enum.reverse(origin -- target)
+        always = lc {_name, {_, forward}, {_, reverse}} inlist always, do: {forward, reverse}
+        if Enum.empty?(always) do
+          always_forward = []
+          always_reverse = []
+        else 
+          [always_forward, always_reverse] = List.unzip always
+        end
         if (length(steps) == length(origin) - length(target)) do          
           sort_steps(lc {_name, {_, forward}, {_, reverse}} inlist steps do
             {reverse, forward}
-          end)
+          end, always_forward, always_reverse)
         else
           {:mismatch, steps}
         end
       end
 
-      defp sort_steps(steps) do
-        [upgrade: (lc {step, _} inlist steps, do: step),
-         downgrade: (lc {_, step} inlist steps, do: step),
+      defp sort_steps(steps, always_forward, always_reverse) do
+        [upgrade: (lc {step, _} inlist steps, do: step) ++ always_forward,
+         downgrade: Enum.reverse(always_reverse) ++ (lc {_, step} inlist steps, do: step),
         ]
       end
     end
   end
 
-  defmacro step(name, forward, opts // []) do
+  defmacro step(name, forward, opts // []), do: __step__(:step, name, forward,opts)
+  defmacro always(name, forward, opts // []), do: __step__(:always, name, forward,opts)
+
+  defp __step__(type, name, forward, opts) do
     name = binary_to_atom(to_binary(name))
     reverse = opts[:reverse] || quote do: Somlos.Step.reverse(unquote(forward))
 
     quote do
-      @step {unquote(name), 
+      Module.put_attribute __MODULE__, unquote(type),
+             {unquote(name), 
              {unquote(forward), Somlos.Step.instruction(unquote(forward))},
              {unquote(reverse), Somlos.Step.instruction(unquote(reverse))}}
     end
