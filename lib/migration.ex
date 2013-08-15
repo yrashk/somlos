@@ -1,5 +1,5 @@
 defmodule Somlos.Migration do
-  
+
   defmacro __using__(_) do
     quote do
       import Somlos.Migration
@@ -7,7 +7,7 @@ defmodule Somlos.Migration do
       Module.register_attribute __MODULE__, :always, accumulate: true, persist: true
 
       def appup(origin_vsn, target_vsn, instructions) do
-        {to_char_list(target_vsn), 
+        {to_char_list(target_vsn),
           [{to_char_list(origin_vsn), instructions[:upgrade]}],
           [{to_char_list(origin_vsn), instructions[:downgrade]}]
         }
@@ -18,24 +18,24 @@ defmodule Somlos.Migration do
         instructions(attrs)
       end
 
-      def instructions_from_module(module) when is_atom(module) do        
+      def instructions_from_module(module) when is_atom(module) do
         instructions(module.__info__(:attributes))
       end
 
-      def instructions_from_remote(node, 
-                                   module // __MODULE__) when is_atom(node) 
+      def instructions_from_remote(node,
+                                   module // __MODULE__) when is_atom(node)
                                                          and is_atom(module) do
 
         instructions(:rpc.call(node, module, :__info__, [:attributes]))
-      end                                                         
+      end
 
       def instructions, do: instructions([])
-      def instructions(origin_attrs) do              
+      def instructions(origin_attrs) do
         target_attrs = __info__(:attributes)
         # Remove attributes of no interest
         origin_steps = lc {:step, [v]} inlist origin_attrs, do: v
         target_steps = lc {:step, [v]} inlist target_attrs, do: v
-        always_steps = lc {:always, [v]} inlist target_attrs, do: v        
+        always_steps = lc {:always, [v]} inlist target_attrs, do: v
         # Figure out which way to go
         cond do
           length(origin_steps) > length(target_steps) -> downgrade(origin_steps, target_steps, always_steps)        
@@ -51,7 +51,7 @@ defmodule Somlos.Migration do
         if Enum.empty?(always) do
           always_forward = []
           always_reverse = []
-        else 
+        else
           [always_forward, always_reverse] = List.unzip always
         end
         if (length(steps) == length(target) - length(origin)) do
@@ -69,10 +69,10 @@ defmodule Somlos.Migration do
         if Enum.empty?(always) do
           always_forward = []
           always_reverse = []
-        else 
+        else
           [always_forward, always_reverse] = List.unzip always
         end
-        if (length(steps) == length(origin) - length(target)) do          
+        if (length(steps) == length(origin) - length(target)) do
           sort_steps(lc {_name, {_, forward}, {_, reverse}} inlist steps do
             {reverse, forward}
           end, always_forward, always_reverse)
@@ -97,7 +97,7 @@ defmodule Somlos.Migration do
     reverse = opts[:reverse] || quote do: Somlos.Step.reverse(unquote(forward))
 
     quote do
-      @value  {unquote(name), 
+      @value  {unquote(name),
                {unquote(forward), Somlos.Step.instruction(unquote(forward))},
                {unquote(reverse), Somlos.Step.instruction(unquote(reverse))}}
       Module.put_attribute __MODULE__, unquote(type), @value
