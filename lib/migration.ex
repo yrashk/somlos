@@ -3,8 +3,8 @@ defmodule Somlos.Migration do
   defmacro __using__(_) do
     quote do
       import Somlos.Migration
-      Module.register_attribute __MODULE__, :step
-      Module.register_attribute __MODULE__, :always
+      Module.register_attribute __MODULE__, :step, accumulate: true, persist: true
+      Module.register_attribute __MODULE__, :always, accumulate: true, persist: true
 
       def appup(origin_vsn, target_vsn, instructions) do
         {to_char_list(target_vsn), 
