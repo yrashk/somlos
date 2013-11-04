@@ -93,7 +93,7 @@ defmodule Somlos.Migration do
   defmacro always(name, forward, opts // []), do: __step__(:always, name, forward,opts)
 
   defp __step__(type, name, forward, opts) do
-    name = binary_to_atom(to_binary(name))
+    name = binary_to_atom(to_string(name))
     reverse = opts[:reverse] || quote do: Somlos.Step.reverse(unquote(forward))
 
     quote do
